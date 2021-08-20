@@ -75,8 +75,8 @@ def main(args=None):
     microbiomes = input_table[["microbiome_path", "type", "weights_path"]].drop_duplicates().rename({"type":"microbiome_type"}, axis=1)
     microbiomes["microbiome_id"] = range(len(microbiomes))
 
-    if len(microbiomes) != len(microbiomes["microbiome_path"].drop_duplicates()):
-        sys.exit("Conflicting types or weights were specified for the same microbiome path!")
+    # if len(microbiomes) != len(microbiomes["microbiome_path"].drop_duplicates()):
+    #     sys.exit("Conflicting types or weights were specified for the same microbiome path!")
 
     microbiomes[["microbiome_id", "microbiome_path", "microbiome_type", "weights_path"]].to_csv(args.microbiomes, sep="\t", index=False)
 

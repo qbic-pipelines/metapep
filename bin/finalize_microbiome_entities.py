@@ -48,6 +48,7 @@ def process_weights(subset):
     present, assign uniform weights. Otherwise, raise an error."""
 
     if subset['entity_weight'].isnull().all():
+        print(f'subset:\n {subset}')
         subset['entity_weight'] = 1
     elif not subset['entity_weight'].isnull().any():
         pass
@@ -71,11 +72,14 @@ entity_microbiome = entity_microbiome.merge(entity)
 # Read the tables that provide the weights and concatenate them
 input_data = pd.concat([ pd.read_csv(e, sep='\t') for e in [args.entrez_microbiomes_entities, args.nucl_microbiomes_entities] if e ])
 
+print(f'input\n {input_data}')
+
 # Join the weights against the entity ids table, which contains all entities
 # that we have observed in upstream processes. Thus, per microbiome, we expect
 # to find weights either for all of them or for none of them.
 result = entity_microbiome.merge(input_data, how="left").drop(columns="entity_name")
 
+print(f'result\n {result}')
 # For each microbiome, we now check whether this assumption is true. If we find
 # no weights for a microbiome, we add uniform weights.
 try:
