@@ -377,10 +377,16 @@ process download_proteins {
     """
 }
 
-ch_nucl_input_files2 = Channel.value(ch_nucl_input_files)
-ch_nucl_input_ids2 = Channel.value(ch_nucl_input_ids)
-ch_nucl_input_files2.join(ch_nucl_input_ids2)
-    .dump(tag:'predict')
+ch_nucl_input_ids.dump(tag:'ids')
+ch_nucl_input_bin_basenames.dump(tag:'basenames')
+
+ch_nucl_input_files
+    .tap { ch_nucl_input_files_redundant }
+    .unique()
+    .set { ch_nucl_input_files_unique }
+
+ch_nucl_input_files_redundant.dump(tag:'red')
+ch_nucl_input_files_unique.dump(tag:'unique')
 
 /*
  * Predict proteins from contigs
@@ -393,9 +399,9 @@ process predict_proteins {
         }
 
     input:
-    val microbiome_id from ch_nucl_input_ids//.dump(tag:'predict')
-    val bin_basename from ch_nucl_input_bin_basenames//.dump(tag:'predict')
-    file microbiome_file from ch_nucl_input_files//.dump(tag:'predict')
+    val microbiome_id from Channel.empty() //ch_nucl_input_ids//.dump(tag:'predict')
+    val bin_basename from Channel.empty() //ch_nucl_input_bin_basenames//.dump(tag:'predict')
+    file microbiome_file from Channel.empty() //ch_nucl_input_files//.dump(tag:'predict')
 
     output:
     Channel.empty().into {ch_pred_proteins_microbiome_ids; ch_pred_proteins_bin_basename; ch_pred_proteins}
@@ -509,10 +515,10 @@ process finalize_microbiome_entities {
         saveAs: {filename -> "$filename" }
 
     input:
-    path   entrez_microbiomes_entities        from       ch_entrez_microbiomes_entities.ifEmpty([]).dump(tag:'entrez')
-    path   nucl_microbiomes_entities          from       ch_nucl_microbiomes_entities.ifEmpty([]).dump( tag: 'nucl' )
-    path   microbiomes_entities_noweights     from       ch_microbiomes_entities_noweights.dump( tag: 'now' )
-    path   entities                           from       ch_entities.dump( tag: 'entities' )
+    path   entrez_microbiomes_entities        from       ch_entrez_microbiomes_entities.ifEmpty([])
+    path   nucl_microbiomes_entities          from       ch_nucl_microbiomes_entities.ifEmpty([])
+    path   microbiomes_entities_noweights     from       ch_microbiomes_entities_noweights
+    path   entities                           from       ch_entities
 
     output:
     path   "microbiomes_entities.tsv"    into   ch_microbiomes_entities  // entity_id, microbiome_id, entity_weight
