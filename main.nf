@@ -205,6 +205,8 @@ process create_db_tables {
     file "conditions.tsv" into ch_conditions                      // condition_id, condition_name, microbiome_id
     file "alleles.tsv"  into ch_alleles                           // allele_id, allele_name
     file "conditions_alleles.tsv" into ch_conditions_alleles      // condition_id, allele_id
+    file "assemblies.tsv" into ch_assemblies                      // assembly_id, assembly_path
+    file "microbiomes_assemblies.tsv" into ch_microbiomes_assemblies    // microbiome_id, assembly_id
 
     script:
     """
@@ -377,16 +379,16 @@ process download_proteins {
     """
 }
 
-ch_nucl_input_ids.dump(tag:'ids')
-ch_nucl_input_bin_basenames.dump(tag:'basenames')
+// ch_nucl_input_ids.dump(tag:'ids')
+// ch_nucl_input_bin_basenames.dump(tag:'basenames')
 
-ch_nucl_input_files
-    .tap { ch_nucl_input_files_redundant }
-    .unique()
-    .set { ch_nucl_input_files_unique }
+// ch_nucl_input_files
+//     .tap { ch_nucl_input_files_redundant }
+//     .unique()
+//     .set { ch_nucl_input_files_unique }
 
-ch_nucl_input_files_redundant.dump(tag:'red')
-ch_nucl_input_files_unique.dump(tag:'unique')
+// ch_nucl_input_files_redundant.dump(tag:'red')
+// ch_nucl_input_files_unique.dump(tag:'unique')
 
 /*
  * Predict proteins from contigs
@@ -399,6 +401,10 @@ process predict_proteins {
         }
 
     input:
+    // val microbiome_id from ch_nucl_input_ids//.dump(tag:'predict')
+    // val bin_basename from ch_nucl_input_bin_basenames//.dump(tag:'predict')
+    // file microbiome_file from ch_nucl_input_files//.dump(tag:'predict')
+
     val microbiome_id from Channel.empty() //ch_nucl_input_ids//.dump(tag:'predict')
     val bin_basename from Channel.empty() //ch_nucl_input_bin_basenames//.dump(tag:'predict')
     file microbiome_file from Channel.empty() //ch_nucl_input_files//.dump(tag:'predict')
@@ -414,27 +420,17 @@ process predict_proteins {
     def mode   = params.prodigal_mode
     def name   = bin_basename ? "${microbiome_id}.${bin_basename}" : "${microbiome_id}"
     def reader = microbiome_file.name =~ ~/(?i)[.]gz$/ ? "gunzip -c" : "cat"
-
     """
-    touch coords.pred_${name}.gff
-    touch proteins.pred_${name}.fasta
-    touch proteins.pred_${name}.tsv
+    $reader $microbiome_file | prodigal \
+                -f gff \
+                -o coords.pred_${name}.gff \
+                -a proteins.pred_${name}.fasta \
+                -p $mode
 
     echo -e "protein_tmp_id\tprotein_sequence" > proteins.pred_${name}.tsv
+    fasta_to_tsv.py --remove-asterisk --input proteins.pred_${name}.fasta >> proteins.pred_${name}.tsv
     gzip proteins.pred_${name}.tsv
     """
-
-    // """
-    // $reader $microbiome_file | prodigal \
-    //             -f gff \
-    //             -o coords.pred_${name}.gff \
-    //             -a proteins.pred_${name}.fasta \
-    //             -p $mode
-
-    // echo -e "protein_tmp_id\tprotein_sequence" > proteins.pred_${name}.tsv
-    // fasta_to_tsv.py --remove-asterisk --input proteins.pred_${name}.fasta >> proteins.pred_${name}.tsv
-    // gzip proteins.pred_${name}.tsv
-    // """
 }
 
 /*
@@ -445,8 +441,8 @@ process assign_nucl_entity_weights {
         saveAs: {filename -> "$filename" }
 
     input:
-    val  microbiome_ids     from  ch_weights.microbiome_ids.collect().ifEmpty([])
-    path weights_files      from  ch_weights.weights_paths.collect().ifEmpty([])
+    val  microbiome_ids     from  ch_weights.microbiome_ids.collect().ifEmpty([])//.dump(tag:'assign_nucl_entity_weights')
+    path weights_files      from  ch_weights.weights_paths.collect().ifEmpty([])//.dump(tag:'assign_nucl_entity_weights')
 
     output:
     path   "microbiomes_entities.nucl.tsv"    into   ch_nucl_microbiomes_entities  // entity_name, microbiome_id, entity_weight

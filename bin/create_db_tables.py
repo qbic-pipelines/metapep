@@ -33,6 +33,8 @@ def parse_args(args=None):
     parser.add_argument('-c', "--conditions", required=True, metavar='FILE', type=argparse.FileType('w'), help="Output file containing: condition_id, condition_name, microbiome_id.")
     parser.add_argument('-a', "--alleles", required=True, metavar='FILE', type=argparse.FileType('w'), help="Output file containing: allele_id, allele_name.")
     parser.add_argument('-ca', "--conditions_alleles", required=True, metavar='FILE', type=argparse.FileType('w'), help="Output file containing: condition_id, allele_id.")
+    parser.add_argument('-as', "--assemblies", required=True, metavar='FILE', type=argparse.FileType('w'), help="Output file containing: assembly_id, assembly_path.")
+    parser.add_argument('-ma', "--microbiomes_assemblies", required=True, metavar='FILE', type=argparse.FileType('w'), help="Output file containing: microbiome_id, assembly_id.")
     return parser.parse_args(args)
 
 
@@ -97,6 +99,12 @@ def main(args=None):
     conditions_alleles = pd.DataFrame([ (row["condition"], allele_name) for _, row in input_table.iterrows() for allele_name in row["alleles"].split(',') ], columns = ["condition_name", "allele_name"])
     conditions_alleles = conditions_alleles.merge(conditions).merge(alleles)[["condition_id", "allele_id"]]
     conditions_alleles.to_csv(args.conditions_alleles, sep="\t", index=False)
+
+    # assembly_id - assembly_path
+    assemblies = input_table[["microbiome_path"]].drop_duplicates().rename({"microbiome_path":"assembly_path"})
+    assemblies["assembly_id"] = range(len(assemblies))
+
+    # microbiome_id - assembly_id
 
     print("Done!")
 
