@@ -101,10 +101,11 @@ def main(args=None):
     conditions_alleles.to_csv(args.conditions_alleles, sep="\t", index=False)
 
     # assembly_id - assembly_path
-    assemblies = input_table[["microbiome_path"]].drop_duplicates().rename({"microbiome_path":"assembly_path"})
-    assemblies["assembly_id"] = range(len(assemblies))
+    microbiomes_assemblies = pd.concat([microbiomes[["microbiome_id", "microbiome_path"]], microbiomes.groupby(by="microbiome_path").ngroup().rename("assembly_id")], axis=1)
+    microbiomes_assemblies[["microbiome_id", "assembly_id"]].to_csv(args.microbiomes_assemblies, sep="\t", index=False)
 
     # microbiome_id - assembly_id
+    microbiomes_assemblies[["assembly_id", "microbiome_path"]].rename({"microbiome_path":"assembly_path"}, axis=1).drop_duplicates().to_csv(args.assemblies, sep="\t", index=False)
 
     print("Done!")
 
