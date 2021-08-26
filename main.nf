@@ -214,7 +214,9 @@ process create_db_tables {
                         -m microbiomes.tsv \
                         -c conditions.tsv \
                         -a alleles.tsv \
-                        -ca conditions_alleles.tsv
+                        -ca conditions_alleles.tsv \
+                        -as assemblies.tsv \
+                        -ma microbiomes_assemblies.tsv
     """
 }
 
@@ -379,8 +381,9 @@ process download_proteins {
     """
 }
 
-// ch_nucl_input_ids.dump(tag:'ids')
-// ch_nucl_input_bin_basenames.dump(tag:'basenames')
+ch_nucl_input_ids.dump(tag:'ids')
+ch_nucl_input_files.dump(tag:'files')
+ch_nucl_input_bin_basenames.dump(tag:'basenames')
 
 // ch_nucl_input_files
 //     .tap { ch_nucl_input_files_redundant }
