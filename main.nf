@@ -236,7 +236,7 @@ ch_microbiomes
         row->
         taxa:      row.microbiome_type == 'taxa'
         proteins : row.microbiome_type == 'proteins'
-        assembly:  row.microbiome_type == 'assembly'
+        // assembly:  row.microbiome_type == 'assembly'
         bins:      row.microbiome_type == 'bins'
     }
     .set{ch_microbiomes_branch}
@@ -258,10 +258,19 @@ ch_microbiomes_branch.proteins
     .set { ch_proteins_input }
 
 // ASSEMBLY
-ch_microbiomes_branch.assembly
+// ch_microbiomes_branch.assembly
+//     .multiMap { row ->
+//             ids: row.microbiome_id
+//             files: row.microbiome_path
+//             bin_basenames: false
+//         }
+//     .set { ch_assembly_input }
+ch_assemblies
+    .splitCsv(sep:'\t', header:true)
     .multiMap { row ->
-            ids: row.microbiome_id
-            files: row.microbiome_path
+            row.assembly_path = file(row.assembly_path, checkIfExists: true)
+            ids: row.assembly_id
+            files:row.assembly_path
             bin_basenames: false
         }
     .set { ch_assembly_input }
@@ -381,9 +390,9 @@ process download_proteins {
     """
 }
 
-ch_nucl_input_ids.dump(tag:'ids')
-ch_nucl_input_files.dump(tag:'files')
-ch_nucl_input_bin_basenames.dump(tag:'basenames')
+// ch_nucl_input_ids.dump(tag:'ids')
+// ch_nucl_input_files.dump(tag:'files')
+// ch_nucl_input_bin_basenames.dump(tag:'basenames')
 
 // ch_nucl_input_files
 //     .tap { ch_nucl_input_files_redundant }
@@ -404,20 +413,20 @@ process predict_proteins {
         }
 
     input:
-    // val microbiome_id from ch_nucl_input_ids//.dump(tag:'predict')
-    // val bin_basename from ch_nucl_input_bin_basenames//.dump(tag:'predict')
-    // file microbiome_file from ch_nucl_input_files//.dump(tag:'predict')
+    val microbiome_id from ch_nucl_input_ids.dump(tag:'predict')
+    val bin_basename from ch_nucl_input_bin_basenames.dump(tag:'predict')
+    file microbiome_file from ch_nucl_input_files.dump(tag:'predict')
 
-    val microbiome_id from Channel.empty() //ch_nucl_input_ids//.dump(tag:'predict')
-    val bin_basename from Channel.empty() //ch_nucl_input_bin_basenames//.dump(tag:'predict')
-    file microbiome_file from Channel.empty() //ch_nucl_input_files//.dump(tag:'predict')
+    // val microbiome_id from Channel.empty() //ch_nucl_input_ids//.dump(tag:'predict')
+    // val bin_basename from Channel.empty() //ch_nucl_input_bin_basenames//.dump(tag:'predict')
+    // file microbiome_file from Channel.empty() //ch_nucl_input_files//.dump(tag:'predict')
 
     output:
-    Channel.empty().into {ch_pred_proteins_microbiome_ids; ch_pred_proteins_bin_basename; ch_pred_proteins}
-    // val microbiome_id into ch_pred_proteins_microbiome_ids                  // Emit microbiome ID
-    // val bin_basename into ch_pred_proteins_bin_basename
-    // file("proteins.pred_${microbiome_id}*.tsv.gz") into ch_pred_proteins     // Emit protein tsv
-    // file "coords.pred_${microbiome_id}*.gff"
+    // Channel.empty().into {ch_pred_proteins_microbiome_ids; ch_pred_proteins_bin_basename; ch_pred_proteins}
+    val microbiome_id into ch_pred_proteins_microbiome_ids                  // Emit microbiome ID
+    val bin_basename into ch_pred_proteins_bin_basename
+    file("proteins.pred_${microbiome_id}*.tsv.gz") into ch_pred_proteins     // Emit protein tsv
+    file "coords.pred_${microbiome_id}*.gff"
 
     script:
     def mode   = params.prodigal_mode
@@ -435,6 +444,14 @@ process predict_proteins {
     gzip proteins.pred_${name}.tsv
     """
 }
+
+ch_pred_proteins_microbiome_ids = Channel.empty()
+ch_pred_proteins_bin_basename = Channel.empty()
+ch_pred_proteins = Channel.empty()
+
+ch_microbiomes_assemblies
+    .splitCsv(sep:'\t', header:true)
+    .view()
 
 /*
  * Assign entity weights for input type 'assembly' and 'bins'

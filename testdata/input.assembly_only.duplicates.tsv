@@ -1,3 +1,6 @@
 condition	type	microbiome_path	alleles	weights_path
 cond_1	assembly	/home/aschuster/metapep/testdata/test_minigut.contigs.fa.gz	A*01:01	/home/aschuster/metapep/testdata/test_minigut.contig_weights.tsv
 cond_2	assembly	/home/aschuster/metapep/testdata/test_minigut.contigs.fa.gz	A*01:01	/home/aschuster/metapep/testdata/test_minigut.copy.contig_weights.tsv
+cond_3	assembly	/home/aschuster/metapep/testdata/test_minigut.copy.contigs.fa.gz	A*01:01	/home/aschuster/metapep/testdata/test_minigut.contig_weights_1.tsv
+cond_4	assembly	/home/aschuster/metapep/testdata/test_minigut.copy.contigs.fa.gz	A*01:01	/home/aschuster/metapep/testdata/test_minigut.contig_weights_2.tsv
+cond_5	bins	/home/aschuster/metapep/testdata/test_bins.tar.gz	A*01:01
