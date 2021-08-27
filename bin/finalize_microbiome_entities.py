@@ -38,6 +38,7 @@ def parse_args():
     parser.add_argument("-nme",  "--nucl-microbiomes-entities",      required=True, metavar="PATH", type=str,                   nargs="?", help="Microbiomes entities map from nucleotide methods (microbiome_id, entity_name, entity_weight)")
     parser.add_argument("-menw", "--microbiomes-entities-noweights", required=True, metavar="PATH", type=str,                              help="Preliminary microbiome entity map (microbiome_id, entity_id) w/o weights.")
     parser.add_argument("-ent",  "--entities",                       required=True, metavar="PATH", type=str,                              help="Entity map (entity_id, entity_name)")
+    parser.add_argument("-ma",   "--microbiomes-assemblies",         required=True, metavar="PATH", type=str,                              help="Assembly-microbiome map (microbiome_id, assembly_id)")
     parser.add_argument("-o",    "--output",                         required=True, metavar="PATH", type=argparse.FileType('w'),           help="Output file (microbiome_id, entity_id, entity_weight)")
 
     return parser.parse_args()
@@ -73,6 +74,12 @@ entity_microbiome = entity_microbiome.merge(entity)
 input_data = pd.concat([ pd.read_csv(e, sep='\t') for e in [args.entrez_microbiomes_entities, args.nucl_microbiomes_entities] if e ])
 
 print(f'input\n {input_data}')
+
+# join the microbiomes_assemblies table with entity_microbiomes in order to have duplicate assemblies in a redundant form again
+assembly_microbiome = pd.read_csv(args.microbiomes_assemblies, sep='\t')
+entity_microbiome = assembly_microbiome.merge(entity_microbiome, left_on="assembly_id", right_on="microbiome_id", how='outer')
+entity_microbiome['microbiome_id_x'] = entity_microbiome['microbiome_id_x'].fillna(entity_microbiome['microbiome_id_y']).astype(int)
+entity_microbiome = entity_microbiome.rename({"microbiome_id_x":"microbiome_id"}, axis=1).drop(["assembly_id", "microbiome_id_y"], axis=1)
 
 # Join the weights against the entity ids table, which contains all entities
 # that we have observed in upstream processes. Thus, per microbiome, we expect

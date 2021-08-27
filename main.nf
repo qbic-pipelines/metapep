@@ -539,6 +539,7 @@ process finalize_microbiome_entities {
     path   nucl_microbiomes_entities          from       ch_nucl_microbiomes_entities.ifEmpty([])
     path   microbiomes_entities_noweights     from       ch_microbiomes_entities_noweights
     path   entities                           from       ch_entities
+    path   microbiomes_assemblies             from       ch_microbiomes_assemblies
 
     output:
     path   "microbiomes_entities.tsv"    into   ch_microbiomes_entities  // entity_id, microbiome_id, entity_weight
@@ -551,6 +552,7 @@ process finalize_microbiome_entities {
         -nme $nucl_microbiomes_entities \
         -menw $microbiomes_entities_noweights \
         -ent "$entities" \
+        -ma "$microbiomes_assemblies" \
         -o microbiomes_entities.tsv
     """
 }
