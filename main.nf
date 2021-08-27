@@ -490,7 +490,7 @@ process generate_protein_and_entity_ids {
 
     input:
     // Predicted Proteins
-    path   predicted_proteins                  from       ch_pred_proteins.collect().ifEmpty([]).dump()
+    path   predicted_proteins                  from       ch_pred_proteins.collect().ifEmpty([])
     val    predicted_proteins_microbiome_ids   from       ch_pred_proteins_microbiome_ids.collect().ifEmpty([])
     val    predicted_proteins_bin_basenames    from       ch_pred_proteins_bin_basename.collect().ifEmpty([])
     // Entrez Proteins
@@ -557,35 +557,33 @@ process finalize_microbiome_entities {
     """
 }
 
+/*
+ * Generate peptides
+ */
+process generate_peptides {
+    publishDir "${params.outdir}", mode: params.publish_dir_mode,
+        saveAs: {filename -> "db_tables/$filename" }
 
+    input:
+    file proteins from ch_proteins
 
-// /*
-//  * Generate peptides
-//  */
-// process generate_peptides {
-//     publishDir "${params.outdir}", mode: params.publish_dir_mode,
-//         saveAs: {filename -> "db_tables/$filename" }
+    output:
+    file "peptides.tsv.gz" into ch_peptides                // peptide_id, peptide_sequence
+    file "proteins_peptides.tsv" into ch_proteins_peptides // protein_id, peptide_id, count
+    //file "proteins_lengths.tsv"
 
-//     input:
-//     file proteins from ch_proteins
-
-//     output:
-//     file "peptides.tsv.gz" into ch_peptides                // peptide_id, peptide_sequence
-//     file "proteins_peptides.tsv" into ch_proteins_peptides // protein_id, peptide_id, count
-//     //file "proteins_lengths.tsv"
-
-//     script:
-//     def min_pep_len = params.min_pep_len
-//     def max_pep_len = params.max_pep_len
-//     """
-//     generate_peptides.py -i $proteins \
-//                          -min $min_pep_len \
-//                          -max $max_pep_len \
-//                          -p "peptides.tsv.gz" \
-//                          -pp "proteins_peptides.tsv" \
-//                          -l "proteins_lengths.tsv"
-//     """
-// }
+    script:
+    def min_pep_len = params.min_pep_len
+    def max_pep_len = params.max_pep_len
+    """
+    generate_peptides.py -i $proteins \
+                         -min $min_pep_len \
+                         -max $max_pep_len \
+                         -p "peptides.tsv.gz" \
+                         -pp "proteins_peptides.tsv" \
+                         -l "proteins_lengths.tsv"
+    """
+}
 
 
 // /*
