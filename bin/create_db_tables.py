@@ -103,7 +103,10 @@ def main(args=None):
     # assembly_id - assembly_path
     assemblies = microbiomes.loc[microbiomes["microbiome_type"] == "assembly"]
     assemblies = assemblies.rename({"microbiome_path":"assembly_path"}, axis=1)
-    microbiomes_assemblies = pd.concat([assemblies[["microbiome_id", "assembly_path"]], assemblies.groupby(by="assembly_path").ngroup().rename("assembly_id")], axis=1)
+    # print(assemblies.groupby(by="assembly_path").first()["microbiome_id"].rename("assembly_id")
+    # print(assemblies.groupby(by="assembly_path").ngroup().rename("assembly_id"))
+    microbiomes_assemblies = pd.merge(assemblies[["microbiome_id", "assembly_path"]], assemblies.groupby(by="assembly_path").first()["microbiome_id"].rename("assembly_id").reset_index())
+    # print(microbiomes_assemblies)
     microbiomes_assemblies[["microbiome_id", "assembly_id"]].to_csv(args.microbiomes_assemblies, sep="\t", index=False)
 
     # microbiome_id - assembly_id
