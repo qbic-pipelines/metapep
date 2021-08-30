@@ -258,13 +258,6 @@ ch_microbiomes_branch.proteins
     .set { ch_proteins_input }
 
 // ASSEMBLY
-// ch_microbiomes_branch.assembly
-//     .multiMap { row ->
-//             ids: row.microbiome_id
-//             files: row.microbiome_path
-//             bin_basenames: false
-//         }
-//     .set { ch_assembly_input }
 ch_assemblies
     .splitCsv(sep:'\t', header:true)
     .multiMap { row ->
@@ -401,16 +394,11 @@ process predict_proteins {
         }
 
     input:
-    val microbiome_id from ch_nucl_input_ids//.dump(tag:'predict')
-    val bin_basename from ch_nucl_input_bin_basenames//.dump(tag:'predict')
-    file microbiome_file from ch_nucl_input_files//.dump(tag:'predict')
-
-    // val microbiome_id from Channel.empty() //ch_nucl_input_ids//.dump(tag:'predict')
-    // val bin_basename from Channel.empty() //ch_nucl_input_bin_basenames//.dump(tag:'predict')
-    // file microbiome_file from Channel.empty() //ch_nucl_input_files//.dump(tag:'predict')
+    val microbiome_id from ch_nucl_input_ids
+    val bin_basename from ch_nucl_input_bin_basenames
+    file microbiome_file from ch_nucl_input_files
 
     output:
-    // Channel.empty().into {ch_pred_proteins_microbiome_ids; ch_pred_proteins_bin_basename; ch_pred_proteins}
     val microbiome_id into ch_pred_proteins_microbiome_ids                  // Emit microbiome ID
     val bin_basename into ch_pred_proteins_bin_basename
     file("proteins.pred_${microbiome_id}*.tsv.gz") into ch_pred_proteins     // Emit protein tsv
@@ -441,8 +429,8 @@ process assign_nucl_entity_weights {
         saveAs: {filename -> "$filename" }
 
     input:
-    val  microbiome_ids     from  ch_weights.microbiome_ids.collect().ifEmpty([])//.dump(tag:'assign_nucl_entity_weights')
-    path weights_files      from  ch_weights.weights_paths.collect().ifEmpty([])//.dump(tag:'assign_nucl_entity_weights')
+    val  microbiome_ids     from  ch_weights.microbiome_ids.collect().ifEmpty([])
+    path weights_files      from  ch_weights.weights_paths.collect().ifEmpty([])
 
     output:
     path   "microbiomes_entities.nucl.tsv"    into   ch_nucl_microbiomes_entities  // entity_name, microbiome_id, entity_weight
@@ -560,7 +548,6 @@ process generate_peptides {
                          -l "proteins_lengths.tsv"
     """
 }
-
 
 /*
  * Collect some numbers: proteins, peptides, unique peptides per conditon
